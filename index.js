@@ -46,6 +46,10 @@ app.use("/general", generalRoutes);
 app.use("/managemant", managementRoutes);
 app.use("/sales", salesRoute);
 
+app.get("/", (req, res) => {
+  res.send("hellow");
+});
+
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 8080;
 mongoose
