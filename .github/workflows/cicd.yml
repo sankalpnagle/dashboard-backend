@@ -16,7 +16,7 @@ jobs:
         run: docker login -u ${{ secrets.DOCKER_USERNAME }} -p ${{ secrets.DOCKER_PASSWORD }}
 
       - name: Build Docker Image
-        run: docker build -t sankalpnagle06/dashboard-backend .
+        run: docker build -t sankalpnagle06/dashboard-backend:latest .
 
       - name: Publish Image to docker hub
         run: docker push sankalpnagle06/dashboard-backend:latest
@@ -30,9 +30,6 @@ jobs:
 
       - name: Delete old container
         run: docker rm -f dashboard-backend-container 
-
-      - name: Create .env file from GitHub secret
-        run: echo "${{ secrets.ENV_FILE }}" > .env
 
       - name: Run Docker Container
         run: docker run -d -p 4000:4000 --name dashboard-backend-container -e MONGO_PASSWORD='${{ secrets.MONGO_PASSWORD }}' sankalpnagle06/dashboard-backend:latest
