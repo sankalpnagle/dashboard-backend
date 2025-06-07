@@ -41,10 +41,11 @@ app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cors());
 
 /* ROUTES */
-app.use("/client", clientRoutes);
-app.use("/general", generalRoutes);
-app.use("/managemant", managementRoutes);
-app.use("/sales", salesRoute);
+const API_PREFIX = "/api";
+app.use(`${API_PREFIX}/client`, clientRoutes);
+app.use(`${API_PREFIX}/general`, generalRoutes);
+app.use(`${API_PREFIX}/management`, managementRoutes); // Fixed typo
+app.use(`${API_PREFIX}/sales`, salesRoute);
 
 app.get("/", (req, res) => {
   res.send("hellow");
