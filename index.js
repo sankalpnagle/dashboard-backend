@@ -30,40 +30,98 @@ import {
 dotenv.config();
 const app = express();
 
-/* Middlewares */
+/* Environment Validation */
+const requiredEnvVars = ["MONGO_URI"];
+for (const envVar of requiredEnvVars) {
+  if (!process.env[envVar]) {
+    console.error(`Missing required environment variable: ${envVar}`);
+    process.exit(1);
+  }
+}
 
+/* Middlewares */
 app.use(express.json());
 app.use(helmet());
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
-app.use(morgan("common"));
+app.use(morgan("dev"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(cors());
+
+// Enhanced CORS configuration
+const corsOptions = {
+  origin: [
+    "http://35.154.114.64", // Your production frontend
+    "http://localhost:3000", // Local development
+  ],
+  methods: "GET,HEAD,PUT,PATCH,POST,DELETE",
+  credentials: true,
+  optionsSuccessStatus: 204,
+};
+app.use(cors(corsOptions));
 
 /* ROUTES */
 const API_PREFIX = "/api";
 app.use(`${API_PREFIX}/client`, clientRoutes);
 app.use(`${API_PREFIX}/general`, generalRoutes);
-app.use(`${API_PREFIX}/management`, managementRoutes); // Fixed typo
+app.use(`${API_PREFIX}/management`, managementRoutes);
 app.use(`${API_PREFIX}/sales`, salesRoute);
 
-app.get("/", (req, res) => {
-  res.send("hellow");
+// Health check endpoint
+app.get("/health", (req, res) => {
+  res.status(200).json({ status: "healthy" });
 });
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 8080;
+const HOST = process.env.HOST || "0.0.0.0"; // Bind to all network interfaces
+
 mongoose
   .connect(process.env.MONGO_URI)
   .then(() => {
-    app.listen(PORT, () => console.log(`Server Port : ${PORT}`));
+    console.log("MongoDB Connected");
+    const server = app.listen(PORT, HOST, () => {
+      console.log(`Server running on http://${HOST}:${PORT}`);
+    });
 
-    /* Only Add Data One Time */
-    // Product.insertMany(dataProduct);
-    // ProductStat.insertMany(dataProductStat);
-    // User.insertMany(dataUser);
-    // Transaction.insertMany(dataTransaction);
-    // OverallStat.insertMany(dataOverallStat);
-    // AffiliateStat.insertMany(dataAffiliateStat);
+    /* ONE-TIME DATA INSERTION - COMMENTED OUT BY DEFAULT */
+    /*
+    const insertData = async () => {
+      try {
+        await Product.insertMany(dataProduct);
+        await ProductStat.insertMany(dataProductStat);
+        await User.insertMany(dataUser);
+        await Transaction.insertMany(dataTransaction);
+        await OverallStat.insertMany(dataOverallStat);
+        await AffiliateStat.insertMany(dataAffiliateStat);
+        console.log('Data successfully inserted');
+      } catch (err) {
+        console.error('Error inserting data:', err);
+      }
+    };
+    // insertData(); // Uncomment this line to insert data
+    */
+
+    // Handle server errors
+    server.on("error", (error) => {
+      console.error("Server error:", error);
+      process.exit(1);
+    });
   })
-  .catch((error) => console.log(`${error} did not connect`));
+  .catch((error) => {
+    console.error("MongoDB Connection Error:", error);
+    process.exit(1);
+  });
+
+// Handle unhandled promise rejections
+process.on("unhandledRejection", (err) => {
+  console.error("Unhandled Rejection:", err);
+  process.exit(1);
+});
+
+// Graceful shutdown
+process.on("SIGTERM", () => {
+  console.log("SIGTERM received. Shutting down gracefully");
+  server.close(() => {
+    console.log("Process terminated");
+  });
+});
