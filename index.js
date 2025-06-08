@@ -38,11 +38,25 @@ app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 app.use(morgan("common"));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
+const allowedOrigins = [
+  "https://dashboard-frontend-kappa-rouge.vercel.app",
+  "http://localhost:3000", // for local development
+];
+
 app.use(
   cors({
-    origin: "*",
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: false, // required when using "*"
+    credentials: false, // Keep this false unless using cookies/auth headers
   })
 );
 
@@ -56,7 +70,6 @@ app.use(`${API_PREFIX}/sales`, salesRoute);
 app.get("/", (req, res) => {
   res.send("hellow");
 });
-
 
 /* MONGOOSE SETUP */
 const PORT = process.env.PORT || 8080;
