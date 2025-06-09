@@ -40,6 +40,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 const allowedOrigins = [
   "https://dashboard-frontend-kappa-rouge.vercel.app",
+  "https://main.d36pecy2ni8irx.amplifyapp.com/",
   "http://localhost:3000", // for local development
 ];
 
